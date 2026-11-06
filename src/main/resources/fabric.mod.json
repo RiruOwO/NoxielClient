@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "noxiel",
+  "version": "${version}",
+  "name": "Noxiel",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/noxiel/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "com.noxiel.noxiel.client.NoxielDataGenerator"
+    ],
+    "client": [
+      "com.noxiel.noxiel.client.NoxielClient"
+    ],
+    "main": [
+      "com.noxiel.noxiel.Noxiel"
+    ]
+  },
+  "mixins": [
+    "noxiel.mixins.json",
+    {
+      "config": "noxiel.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

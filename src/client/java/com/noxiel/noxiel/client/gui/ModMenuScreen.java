@@ -3,6 +3,7 @@ package com.noxiel.noxiel.client.gui;
 import com.noxiel.noxiel.client.ClientConfig;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 
 public class ModMenuScreen extends Screen {
@@ -13,6 +14,9 @@ public class ModMenuScreen extends Screen {
     private int panelX;
     private int panelY;
 
+    // 検索バーのウィジェット
+    private TextFieldWidget searchField;
+
     public ModMenuScreen() {
         super(Text.literal("Noxiel Client"));
     }
@@ -22,29 +26,61 @@ public class ModMenuScreen extends Screen {
         super.init();
         this.panelX = (this.width - this.panelWidth) / 2;
         this.panelY = (this.height - this.panelHeight) / 2;
+
+        // 検索バーの作成と配置（パネルの右上、タイトルの下あたり）
+        this.searchField = new TextFieldWidget(
+                this.textRenderer,
+                panelX + panelWidth - 130,
+                panelY + 25,
+                110,
+                16,
+                Text.literal("Search")
+        );
+        this.searchField.setMaxLength(32);
+        this.searchField.setPlaceholder(Text.literal("Search..."));
+
+        // ※検索バーは自前で最後に描画するため、ここでは addDrawableChild しません
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         this.renderBackground(context, mouseX, mouseY, delta);
 
+        // パネルの背景と枠線
         context.fill(panelX + 5, panelY + 5, panelX + panelWidth + 5, panelY + panelHeight + 5, 0x80000000);
         context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xFF1E121E);
         context.drawBorder(panelX, panelY, panelWidth, panelHeight, 0xFFFF1493);
 
+        // タブの描画
         drawTab(context, "MODS", panelX + 10, panelY - 25, 80, 25, 0, mouseX, mouseY);
         drawTab(context, "SETTINGS", panelX + 95, panelY - 25, 100, 25, 1, mouseX, mouseY);
 
+        // カードの描画（検索フィルタリング付き）
         if (currentTab == 0) {
-            drawCard(context, "FPS", panelX + 15, panelY + 35, 110, 80, ClientConfig.isFpsEnabled);
-            drawCard(context, "CPS", panelX + 145, panelY + 35, 110, 80, ClientConfig.isCpsEnabled);
+            String searchText = this.searchField != null ? this.searchField.getText().toLowerCase().trim() : "";
+
+            // FPSカードの判定
+            if (searchText.isEmpty() || "fps".contains(searchText)) {
+                drawCard(context, "FPS", panelX + 15, panelY + 50, 110, 80, ClientConfig.isFpsEnabled);
+            }
+
+            // CPSカードの判定
+            if (searchText.isEmpty() || "cps".contains(searchText)) {
+                drawCard(context, "CPS", panelX + 145, panelY + 50, 110, 80, ClientConfig.isCpsEnabled);
+            }
         }
 
+        // タイトル
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, panelY + 10, 0xFFF5C2E7);
 
         // 右上のボタン
         drawTab(context, "HUD", panelX + panelWidth - 100, panelY + 5, 40, 20, -1, mouseX, mouseY);
         drawTab(context, "CONFIG", panelX + panelWidth - 55, panelY + 5, 45, 20, -1, mouseX, mouseY);
+
+        // 検索バーの描画（最後に描画することで文字がぼやけるのを防ぐ）
+        if (this.searchField != null) {
+            this.searchField.render(context, mouseX, mouseY, delta);
+        }
     }
 
     private void drawTab(DrawContext context, String text, int x, int y, int width, int height, int tabIndex, int mouseX, int mouseY) {
@@ -82,6 +118,18 @@ public class ModMenuScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // 検索バーのクリック判定を最優先
+        if (this.searchField != null && this.searchField.mouseClicked(mouseX, mouseY, button)) {
+            this.setFocused(this.searchField);
+            return true;
+        }
+
+        // 検索バー以外の場所をクリックしたらフォーカスを外す
+        if (this.searchField != null) {
+            this.setFocused(null);
+        }
+
+        // タブのクリック判定
         if (isMouseOverTab(mouseX, mouseY, panelX + 10, panelY - 25, 80, 25)) {
             currentTab = 0;
             return true;
@@ -90,33 +138,66 @@ public class ModMenuScreen extends Screen {
             currentTab = 1;
             return true;
         }
+
+        // HUDボタン
         if (isMouseOverTab(mouseX, mouseY, panelX + panelWidth - 100, panelY + 5, 40, 20)) {
             if (this.client != null) {
                 this.client.setScreen(new HudEditorScreen());
             }
             return true;
         }
+        // CONFIGボタン
         if (isMouseOverTab(mouseX, mouseY, panelX + panelWidth - 55, panelY + 5, 45, 20)) {
             if (this.client != null) {
-                this.client.setScreen(new ConfigScreen()); // Config画面を開く
+                this.client.setScreen(new ConfigScreen());
             }
             return true;
         }
 
+        // カードのクリック判定
         if (currentTab == 0) {
-            if (isMouseOverTab(mouseX, mouseY, panelX + 15, panelY + 35, 110, 80)) {
-                ClientConfig.isFpsEnabled = !ClientConfig.isFpsEnabled;
-                ClientConfig.save(); // ★切り替えた瞬間に保存
-                return true;
+            String searchText = this.searchField != null ? this.searchField.getText().toLowerCase().trim() : "";
+
+            if (searchText.isEmpty() || "fps".contains(searchText)) {
+                if (isMouseOverTab(mouseX, mouseY, panelX + 15, panelY + 50, 110, 80)) {
+                    ClientConfig.isFpsEnabled = !ClientConfig.isFpsEnabled;
+                    ClientConfig.save();
+                    return true;
+                }
             }
-            if (isMouseOverTab(mouseX, mouseY, panelX + 145, panelY + 35, 110, 80)) {
-                ClientConfig.isCpsEnabled = !ClientConfig.isCpsEnabled;
-                ClientConfig.save(); // ★切り替えた瞬間に保存
-                return true;
+            if (searchText.isEmpty() || "cps".contains(searchText)) {
+                if (isMouseOverTab(mouseX, mouseY, panelX + 145, panelY + 50, 110, 80)) {
+                    ClientConfig.isCpsEnabled = !ClientConfig.isCpsEnabled;
+                    ClientConfig.save();
+                    return true;
+                }
             }
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    // キーボード入力（文字入力）を検索バーに伝える
+    @Override
+    public boolean charTyped(char chr, int modifiers) {
+        if (this.searchField != null && this.searchField.isFocused()) {
+            return this.searchField.charTyped(chr, modifiers);
+        }
+        return super.charTyped(chr, modifiers);
+    }
+
+    // キーボードの特殊キー（Backspaceなど）を検索バーに伝える
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.searchField != null && this.searchField.isFocused()) {
+            // もしEscキーが押されたらフォーカスを外す（画面は閉じない）
+            if (keyCode == 256) { // GLFW.GLFW_KEY_ESCAPE
+                this.setFocused(null);
+                return true;
+            }
+            return this.searchField.keyPressed(keyCode, scanCode, modifiers);
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     private boolean isMouseOverTab(double mouseX, double mouseY, int x, int y, int width, int height) {

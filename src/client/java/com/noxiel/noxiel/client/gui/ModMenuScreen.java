@@ -118,18 +118,16 @@ public class ModMenuScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // 検索バーのクリック判定を最優先
+        // 1. 検索バーのクリック判定
         if (this.searchField != null && this.searchField.mouseClicked(mouseX, mouseY, button)) {
             this.setFocused(this.searchField);
             return true;
         }
-
-        // 検索バー以外の場所をクリックしたらフォーカスを外す
         if (this.searchField != null) {
             this.setFocused(null);
         }
 
-        // タブのクリック判定
+        // 2. タブのクリック判定
         if (isMouseOverTab(mouseX, mouseY, panelX + 10, panelY - 25, 80, 25)) {
             currentTab = 0;
             return true;
@@ -139,14 +137,13 @@ public class ModMenuScreen extends Screen {
             return true;
         }
 
-        // HUDボタン
+        // 3. 右上のボタン（HUD / CONFIG）の判定
         if (isMouseOverTab(mouseX, mouseY, panelX + panelWidth - 100, panelY + 5, 40, 20)) {
             if (this.client != null) {
                 this.client.setScreen(new HudEditorScreen());
             }
             return true;
         }
-        // CONFIGボタン
         if (isMouseOverTab(mouseX, mouseY, panelX + panelWidth - 55, panelY + 5, 45, 20)) {
             if (this.client != null) {
                 this.client.setScreen(new ConfigScreen());
@@ -154,21 +151,39 @@ public class ModMenuScreen extends Screen {
             return true;
         }
 
-        // カードのクリック判定
+        // 4. カードのクリック判定
         if (currentTab == 0) {
             String searchText = this.searchField != null ? this.searchField.getText().toLowerCase().trim() : "";
 
+            // --- FPSカードの判定 ---
             if (searchText.isEmpty() || "fps".contains(searchText)) {
+                // カード全体の判定
                 if (isMouseOverTab(mouseX, mouseY, panelX + 15, panelY + 50, 110, 80)) {
-                    ClientConfig.isFpsEnabled = !ClientConfig.isFpsEnabled;
-                    ClientConfig.save();
+                    // Y座標が「ステータスバー（下半分）」の範囲内かチェック
+                    if (mouseY >= panelY + 50 + 60) { // 60はステータスバーの開始位置
+                        ClientConfig.isFpsEnabled = !ClientConfig.isFpsEnabled;
+                        ClientConfig.save();
+                    } else {
+                        // 上半分なら設定画面を開く
+                        if (this.client != null) {
+                            this.client.setScreen(new HudSettingsScreen("FPS"));
+                        }
+                    }
                     return true;
                 }
             }
+
+            // --- CPSカードの判定 ---
             if (searchText.isEmpty() || "cps".contains(searchText)) {
                 if (isMouseOverTab(mouseX, mouseY, panelX + 145, panelY + 50, 110, 80)) {
-                    ClientConfig.isCpsEnabled = !ClientConfig.isCpsEnabled;
-                    ClientConfig.save();
+                    if (mouseY >= panelY + 50 + 60) {
+                        ClientConfig.isCpsEnabled = !ClientConfig.isCpsEnabled;
+                        ClientConfig.save();
+                    } else {
+                        if (this.client != null) {
+                            this.client.setScreen(new HudSettingsScreen("CPS"));
+                        }
+                    }
                     return true;
                 }
             }

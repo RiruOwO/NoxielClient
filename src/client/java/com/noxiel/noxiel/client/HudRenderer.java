@@ -75,6 +75,61 @@ public class HudRenderer {
 
                 context.getMatrices().pop();
             }
+
+            if (ClientConfig.isPingEnabled) {
+                // シングルプレイ等ではPingが取得できないことがあるため0にする
+                int ping = 0;
+                if (client.getNetworkHandler() != null && client.player != null) {
+                    var entry = client.getNetworkHandler().getPlayerListEntry(client.player.getUuid());
+                    if (entry != null) {
+                        ping = entry.getLatency();
+                    }
+                }
+                String text = "Ping: " + ping + "ms";
+
+                context.getMatrices().push();
+                context.getMatrices().translate(ClientConfig.pingX, ClientConfig.pingY, 0);
+                context.getMatrices().scale(ClientConfig.pingScale, ClientConfig.pingScale, 1.0f);
+                context.drawTextWithShadow(client.textRenderer, text, 0, 0, 0xFFF5C2E7);
+                context.getMatrices().pop();
+            }
+
+            // ==========================================
+            // Keystrokesの描画 (簡易版)
+            // ==========================================
+            if (ClientConfig.isKeystrokesEnabled) {
+                int x = ClientConfig.keysX;
+                int y = ClientConfig.keysY;
+                int size = 15; // キーのサイズ
+                int gap = 2;   // キーの間隔
+
+                context.getMatrices().push();
+                context.getMatrices().translate(x, y, 0);
+                context.getMatrices().scale(ClientConfig.keysScale, ClientConfig.keysScale, 1.0f);
+
+                // Wキー
+                drawKey(context, client, "W", 0, 0, size, gap, client.options.forwardKey.isPressed());
+                // Aキー
+                drawKey(context, client, "A", -(size + gap), size + gap, size, gap, client.options.leftKey.isPressed());
+                // Sキー
+                drawKey(context, client, "S", 0, size + gap, size, gap, client.options.backKey.isPressed());
+                // Dキー
+                drawKey(context, client, "D", size + gap, size + gap, size, gap, client.options.rightKey.isPressed());
+
+                context.getMatrices().pop();
+            }
         });
+    }
+
+    private static void drawKey(DrawContext context, MinecraftClient client, String key, int x, int y, int size, int gap, boolean isPressed) {
+        // 押されている時はピンク、押されていない時は半透明の黒
+        int bgColor = isPressed ? 0xFFFF1493 : 0x80000000;
+        int textColor = isPressed ? 0xFFFFFF : 0xFFAAAAAA;
+
+        context.fill(x, y, x + size, y + size, bgColor);
+        context.drawBorder(x, y, size, size, 0xFF555555);
+
+        int textWidth = client.textRenderer.getWidth(key);
+        context.drawTextWithShadow(client.textRenderer, key, x + (size - textWidth) / 2, y + (size - 8) / 2, textColor);
     }
 }

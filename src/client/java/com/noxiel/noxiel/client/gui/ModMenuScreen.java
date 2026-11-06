@@ -7,14 +7,10 @@ import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 
 public class ModMenuScreen extends Screen {
-
     private int currentTab = 0;
-    private int panelWidth = 400;
-    private int panelHeight = 250;
-    private int panelX;
-    private int panelY;
-
-    // 検索バーのウィジェット
+    private int panelWidth = 450;
+    private int panelHeight = 300;
+    private int panelX, panelY;
     private TextFieldWidget searchField;
 
     public ModMenuScreen() {
@@ -26,27 +22,16 @@ public class ModMenuScreen extends Screen {
         super.init();
         this.panelX = (this.width - this.panelWidth) / 2;
         this.panelY = (this.height - this.panelHeight) / 2;
-
-        // 検索バーの作成と配置（パネルの右上、タイトルの下あたり）
-        this.searchField = new TextFieldWidget(
-                this.textRenderer,
-                panelX + panelWidth - 130,
-                panelY + 25,
-                110,
-                16,
-                Text.literal("Search")
-        );
+        this.searchField = new TextFieldWidget(this.textRenderer, panelX + panelWidth - 130, panelY + 25, 110, 16, Text.literal("Search"));
         this.searchField.setMaxLength(32);
         this.searchField.setPlaceholder(Text.literal("Search..."));
-
-        // ※検索バーは自前で最後に描画するため、ここでは addDrawableChild しません
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         this.renderBackground(context, mouseX, mouseY, delta);
 
-        // パネルの背景と枠線
+        // パネル背景と枠線
         context.fill(panelX + 5, panelY + 5, panelX + panelWidth + 5, panelY + panelHeight + 5, 0x80000000);
         context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xFF1E121E);
         context.drawBorder(panelX, panelY, panelWidth, panelHeight, 0xFFFF1493);
@@ -55,29 +40,45 @@ public class ModMenuScreen extends Screen {
         drawTab(context, "MODS", panelX + 10, panelY - 25, 80, 25, 0, mouseX, mouseY);
         drawTab(context, "SETTINGS", panelX + 95, panelY - 25, 100, 25, 1, mouseX, mouseY);
 
-        // カードの描画（検索フィルタリング付き）
+        // カードの描画（3列2行）
         if (currentTab == 0) {
             String searchText = this.searchField != null ? this.searchField.getText().toLowerCase().trim() : "";
 
-            // FPSカードの判定
+            int col1 = panelX + 15;
+            int col2 = panelX + 155;
+            int col3 = panelX + 295;
+            int row1 = panelY + 50;
+            int row2 = panelY + 160;
+
+            // --- 1行目 ---
             if (searchText.isEmpty() || "fps".contains(searchText)) {
-                drawCard(context, "FPS", panelX + 15, panelY + 50, 110, 80, ClientConfig.isFpsEnabled);
+                drawCard(context, "FPS", col1, row1, 120, 90, ClientConfig.isFpsEnabled);
+            }
+            if (searchText.isEmpty() || "cps".contains(searchText)) {
+                drawCard(context, "CPS", col2, row1, 120, 90, ClientConfig.isCpsEnabled);
+            }
+            if (searchText.isEmpty() || "ping".contains(searchText)) {
+                drawCard(context, "PING", col3, row1, 120, 90, ClientConfig.isPingEnabled);
             }
 
-            // CPSカードの判定
-            if (searchText.isEmpty() || "cps".contains(searchText)) {
-                drawCard(context, "CPS", panelX + 145, panelY + 50, 110, 80, ClientConfig.isCpsEnabled);
+            // --- 2行目 ---
+            if (searchText.isEmpty() || "keys".contains(searchText) || "keystrokes".contains(searchText)) {
+                drawCard(context, "KEYS", col1, row2, 120, 90, ClientConfig.isKeystrokesEnabled);
+            }
+
+            // Sprint/Sneak カード（どちらかがオンならENABLED）
+            if (searchText.isEmpty() || "sprint".contains(searchText) || "sneak".contains(searchText)) {
+                boolean anyEnabled = ClientConfig.isToggleSprintEnabled || ClientConfig.isToggleSneakEnabled;
+                drawCard(context, "Sprint/Sneak", col2, row2, 120, 90, anyEnabled);
             }
         }
 
-        // タイトル
+        // タイトルと右上ボタン
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, panelY + 10, 0xFFF5C2E7);
-
-        // 右上のボタン
         drawTab(context, "HUD", panelX + panelWidth - 100, panelY + 5, 40, 20, -1, mouseX, mouseY);
         drawTab(context, "CONFIG", panelX + panelWidth - 55, panelY + 5, 45, 20, -1, mouseX, mouseY);
 
-        // 検索バーの描画（最後に描画することで文字がぼやけるのを防ぐ）
+        // 検索バー
         if (this.searchField != null) {
             this.searchField.render(context, mouseX, mouseY, delta);
         }
@@ -86,15 +87,10 @@ public class ModMenuScreen extends Screen {
     private void drawTab(DrawContext context, String text, int x, int y, int width, int height, int tabIndex, int mouseX, int mouseY) {
         boolean isSelected = (currentTab == tabIndex && tabIndex != -1);
         boolean isHovered = mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
-
         int bgColor = isSelected ? 0xFF3A1F3A : (isHovered ? 0xFF2B1B2B : 0xFF1E121E);
         int textColor = isSelected ? 0xFFFF1493 : 0xFFAAAAAA;
-
         context.fill(x, y, x + width, y + height, bgColor);
-        if (isSelected) {
-            context.fill(x, y + height - 2, x + width, y + height, 0xFFFF1493);
-        }
-
+        if (isSelected) context.fill(x, y + height - 2, x + width, y + height, 0xFFFF1493);
         int textX = x + (width - this.textRenderer.getWidth(text)) / 2;
         int textY = y + (height - 8) / 2;
         context.drawTextWithShadow(this.textRenderer, text, textX, textY, textColor);
@@ -109,107 +105,95 @@ public class ModMenuScreen extends Screen {
 
         int statusY = y + height - 20;
         int statusColor = isEnabled ? 0xFF00AA00 : 0xFFAA0000;
-        context.fill(x + 5, statusY, x + width - 5, statusY + 15, statusColor);
-
         String statusText = isEnabled ? "ENABLED" : "DISABLED";
+        context.fill(x + 5, statusY, x + width - 5, statusY + 15, statusColor);
         int statusTextX = x + (width - this.textRenderer.getWidth(statusText)) / 2;
         context.drawTextWithShadow(this.textRenderer, statusText, statusTextX, statusY + 4, 0xFFFFFF);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // 1. 検索バーのクリック判定
         if (this.searchField != null && this.searchField.mouseClicked(mouseX, mouseY, button)) {
             this.setFocused(this.searchField);
             return true;
         }
-        if (this.searchField != null) {
-            this.setFocused(null);
-        }
+        if (this.searchField != null) this.setFocused(null);
 
-        // 2. タブのクリック判定
-        if (isMouseOverTab(mouseX, mouseY, panelX + 10, panelY - 25, 80, 25)) {
-            currentTab = 0;
-            return true;
-        }
-        if (isMouseOverTab(mouseX, mouseY, panelX + 95, panelY - 25, 100, 25)) {
-            currentTab = 1;
-            return true;
-        }
+        if (isMouseOverTab(mouseX, mouseY, panelX + 10, panelY - 25, 80, 25)) { currentTab = 0; return true; }
+        if (isMouseOverTab(mouseX, mouseY, panelX + 95, panelY - 25, 100, 25)) { currentTab = 1; return true; }
+        if (isMouseOverTab(mouseX, mouseY, panelX + panelWidth - 100, panelY + 5, 40, 20)) { if (this.client != null) this.client.setScreen(new HudEditorScreen()); return true; }
+        if (isMouseOverTab(mouseX, mouseY, panelX + panelWidth - 55, panelY + 5, 45, 20)) { if (this.client != null) this.client.setScreen(new ConfigScreen()); return true; }
 
-        // 3. 右上のボタン（HUD / CONFIG）の判定
-        if (isMouseOverTab(mouseX, mouseY, panelX + panelWidth - 100, panelY + 5, 40, 20)) {
-            if (this.client != null) {
-                this.client.setScreen(new HudEditorScreen());
-            }
-            return true;
-        }
-        if (isMouseOverTab(mouseX, mouseY, panelX + panelWidth - 55, panelY + 5, 45, 20)) {
-            if (this.client != null) {
-                this.client.setScreen(new ConfigScreen());
-            }
-            return true;
-        }
-
-        // 4. カードのクリック判定
         if (currentTab == 0) {
             String searchText = this.searchField != null ? this.searchField.getText().toLowerCase().trim() : "";
+            int col1 = panelX + 15;
+            int col2 = panelX + 155;
+            int col3 = panelX + 295;
+            int row1 = panelY + 50;
+            int row2 = panelY + 160;
 
-            // --- FPSカードの判定 ---
+            // --- FPS ---
             if (searchText.isEmpty() || "fps".contains(searchText)) {
-                // カード全体の判定
-                if (isMouseOverTab(mouseX, mouseY, panelX + 15, panelY + 50, 110, 80)) {
-                    // Y座標が「ステータスバー（下半分）」の範囲内かチェック
-                    if (mouseY >= panelY + 50 + 60) { // 60はステータスバーの開始位置
-                        ClientConfig.isFpsEnabled = !ClientConfig.isFpsEnabled;
+                if (isMouseOverTab(mouseX, mouseY, col1, row1, 120, 90)) {
+                    if (mouseY >= row1 + 70) { ClientConfig.isFpsEnabled = !ClientConfig.isFpsEnabled; ClientConfig.save(); }
+                    else if (this.client != null) this.client.setScreen(new HudSettingsScreen("FPS"));
+                    return true;
+                }
+            }
+            // --- CPS ---
+            if (searchText.isEmpty() || "cps".contains(searchText)) {
+                if (isMouseOverTab(mouseX, mouseY, col2, row1, 120, 90)) {
+                    if (mouseY >= row1 + 70) { ClientConfig.isCpsEnabled = !ClientConfig.isCpsEnabled; ClientConfig.save(); }
+                    else if (this.client != null) this.client.setScreen(new HudSettingsScreen("CPS"));
+                    return true;
+                }
+            }
+            // --- PING ---
+            if (searchText.isEmpty() || "ping".contains(searchText)) {
+                if (isMouseOverTab(mouseX, mouseY, col3, row1, 120, 90)) {
+                    if (mouseY >= row1 + 70) { ClientConfig.isPingEnabled = !ClientConfig.isPingEnabled; ClientConfig.save(); }
+                    else if (this.client != null) this.client.setScreen(new HudSettingsScreen("PING"));
+                    return true;
+                }
+            }
+            // --- KEYS ---
+            if (searchText.isEmpty() || "keys".contains(searchText) || "keystrokes".contains(searchText)) {
+                if (isMouseOverTab(mouseX, mouseY, col1, row2, 120, 90)) {
+                    if (mouseY >= row2 + 70) { ClientConfig.isKeystrokesEnabled = !ClientConfig.isKeystrokesEnabled; ClientConfig.save(); }
+                    else if (this.client != null) this.client.setScreen(new HudSettingsScreen("KEYS"));
+                    return true;
+                }
+            }
+            // --- Sprint/Sneak ---
+            if (searchText.isEmpty() || "sprint".contains(searchText) || "sneak".contains(searchText)) {
+                if (isMouseOverTab(mouseX, mouseY, col2, row2, 120, 90)) {
+                    if (mouseY >= row2 + 70) {
+                        // 下半分なら一括トグル
+                        boolean anyEnabled = ClientConfig.isToggleSprintEnabled || ClientConfig.isToggleSneakEnabled;
+                        ClientConfig.isToggleSprintEnabled = !anyEnabled;
+                        ClientConfig.isToggleSneakEnabled = false;
                         ClientConfig.save();
                     } else {
                         // 上半分なら設定画面を開く
-                        if (this.client != null) {
-                            this.client.setScreen(new HudSettingsScreen("FPS"));
-                        }
-                    }
-                    return true;
-                }
-            }
-
-            // --- CPSカードの判定 ---
-            if (searchText.isEmpty() || "cps".contains(searchText)) {
-                if (isMouseOverTab(mouseX, mouseY, panelX + 145, panelY + 50, 110, 80)) {
-                    if (mouseY >= panelY + 50 + 60) {
-                        ClientConfig.isCpsEnabled = !ClientConfig.isCpsEnabled;
-                        ClientConfig.save();
-                    } else {
-                        if (this.client != null) {
-                            this.client.setScreen(new HudSettingsScreen("CPS"));
-                        }
+                        if (this.client != null) this.client.setScreen(new HudSettingsScreen("MOVE"));
                     }
                     return true;
                 }
             }
         }
-
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    // キーボード入力（文字入力）を検索バーに伝える
     @Override
     public boolean charTyped(char chr, int modifiers) {
-        if (this.searchField != null && this.searchField.isFocused()) {
-            return this.searchField.charTyped(chr, modifiers);
-        }
+        if (this.searchField != null && this.searchField.isFocused()) return this.searchField.charTyped(chr, modifiers);
         return super.charTyped(chr, modifiers);
     }
 
-    // キーボードの特殊キー（Backspaceなど）を検索バーに伝える
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (this.searchField != null && this.searchField.isFocused()) {
-            // もしEscキーが押されたらフォーカスを外す（画面は閉じない）
-            if (keyCode == 256) { // GLFW.GLFW_KEY_ESCAPE
-                this.setFocused(null);
-                return true;
-            }
+            if (keyCode == 256) { this.setFocused(null); return true; }
             return this.searchField.keyPressed(keyCode, scanCode, modifiers);
         }
         return super.keyPressed(keyCode, scanCode, modifiers);

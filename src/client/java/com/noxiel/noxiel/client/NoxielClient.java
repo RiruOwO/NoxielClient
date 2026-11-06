@@ -51,6 +51,30 @@ public class NoxielClient implements ClientModInitializer {
                     lastAttackTime = System.currentTimeMillis();
                 }
             }
+
+            // ★ Toggle Sprint の処理
+            // 左Shiftキー（デフォルトのスプリントキー）が「押された瞬間」を検知
+            if (ClientConfig.isToggleSprintEnabled && client.options.sprintKey.wasPressed()) {
+                ClientConfig.sprintToggled = !ClientConfig.sprintToggled;
+            }
+
+            // トグルがオンの時はスプリント状態を強制する
+            if (ClientConfig.isToggleSprintEnabled && ClientConfig.sprintToggled) {
+                client.options.sprintKey.setPressed(true);
+            } else if (ClientConfig.isToggleSprintEnabled && !ClientConfig.sprintToggled) {
+                client.options.sprintKey.setPressed(false);
+            }
+
+            // ★ Toggle Sneak の処理
+            if (ClientConfig.isToggleSneakEnabled && client.options.sneakKey.wasPressed()) {
+                ClientConfig.sneakToggled = !ClientConfig.sneakToggled;
+            }
+
+            if (ClientConfig.isToggleSneakEnabled && ClientConfig.sneakToggled) {
+                client.options.sneakKey.setPressed(true);
+            } else if (ClientConfig.isToggleSneakEnabled && !ClientConfig.sneakToggled) {
+                client.options.sneakKey.setPressed(false);
+            }
         });
     }
 }

@@ -12,58 +12,58 @@ import java.util.List;
 
 public class ClientConfig {
     // ==========================================
-    // 基本設定データ
+    // 基本設定データ (初期値はすべてfalse)
     // ==========================================
     public static boolean isFpsEnabled = false;
     public static boolean isCpsEnabled = false;
+    public static boolean isPingEnabled = false;
+    public static boolean isKeystrokesEnabled = false;
+    public static boolean isToggleSprintEnabled = false;
+    public static boolean isToggleSneakEnabled = false;
 
-    public static int fpsX = 10;
-    public static int fpsY = 10;
-    public static int cpsX = 10;
-    public static int cpsY = 30;
+    // HUDの座標
+    public static int fpsX = 10, fpsY = 10;
+    public static int cpsX = 10, cpsY = 30;
+    public static int pingX = 10, pingY = 50;
+    public static int keysX = 10, keysY = 80;
 
-    // ==========================================
-    // HUDの詳細設定（サイズ・背景・色）
-    // ==========================================
-    // FPSの設定
+    // HUDの詳細設定
     public static float fpsScale = 1.0f;
     public static boolean fpsShowBackground = false;
     public static int fpsColor = 0xFFF5C2E7;
 
-    // CPSの設定
     public static float cpsScale = 1.0f;
     public static boolean cpsShowBackground = false;
     public static int cpsColor = 0xFFF5C2E7;
 
-    // ==========================================
-    // プロファイル管理用のデータ
-    // ==========================================
+    // ★追加：PingとKeystrokesのスケール
+    public static float pingScale = 1.0f;
+    public static float keysScale = 1.0f;
+
+    // Toggle内部状態
+    public static boolean sprintToggled = false;
+    public static boolean sneakToggled = false;
+
+    // プロファイル管理
     public static String currentProfile = "Default";
     public static List<String> profiles = new ArrayList<>();
 
-    // ==========================================
-    // 保存・読み込み処理
-    // ==========================================
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File CONFIG_DIR = new File(FabricLoader.getInstance().getConfigDir().toFile(), "Noxiel");
+
+    public static boolean isCustomModelEnabled = false;
 
     private static File getCurrentProfileFile() {
         return new File(CONFIG_DIR, currentProfile + ".json");
     }
 
     public static void init() {
-        if (!CONFIG_DIR.exists()) {
-            CONFIG_DIR.mkdirs();
-        }
-
+        if (!CONFIG_DIR.exists()) CONFIG_DIR.mkdirs();
         File[] files = CONFIG_DIR.listFiles((dir, name) -> name.endsWith(".json"));
         profiles.clear();
         if (files != null) {
-            for (File f : files) {
-                profiles.add(f.getName().replace(".json", ""));
-            }
+            for (File f : files) profiles.add(f.getName().replace(".json", ""));
         }
-
         if (profiles.isEmpty()) {
             profiles.add("Default");
             currentProfile = "Default";
@@ -82,40 +82,47 @@ public class ClientConfig {
                 if (data != null) {
                     isFpsEnabled = data.isFpsEnabled;
                     isCpsEnabled = data.isCpsEnabled;
-                    fpsX = data.fpsX;
-                    fpsY = data.fpsY;
-                    cpsX = data.cpsX;
-                    cpsY = data.cpsY;
+                    isPingEnabled = data.isPingEnabled;
+                    isKeystrokesEnabled = data.isKeystrokesEnabled;
+                    isToggleSprintEnabled = data.isToggleSprintEnabled;
+                    isToggleSneakEnabled = data.isToggleSneakEnabled;
 
-                    // 詳細設定の読み込み
+                    fpsX = data.fpsX; fpsY = data.fpsY;
+                    cpsX = data.cpsX; cpsY = data.cpsY;
+                    pingX = data.pingX; pingY = data.pingY;
+                    keysX = data.keysX; keysY = data.keysY;
+
                     fpsScale = data.fpsScale;
                     fpsShowBackground = data.fpsShowBackground;
                     fpsColor = data.fpsColor;
                     cpsScale = data.cpsScale;
                     cpsShowBackground = data.cpsShowBackground;
                     cpsColor = data.cpsColor;
+
+                    // ★追加
+                    pingScale = data.pingScale;
+                    keysScale = data.keysScale;
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            } catch (Exception e) { e.printStackTrace(); }
         }
     }
 
     public static void save() {
         try {
-            if (!CONFIG_DIR.exists()) {
-                CONFIG_DIR.mkdirs();
-            }
-
+            if (!CONFIG_DIR.exists()) CONFIG_DIR.mkdirs();
             ProfileData data = new ProfileData();
             data.isFpsEnabled = isFpsEnabled;
             data.isCpsEnabled = isCpsEnabled;
-            data.fpsX = fpsX;
-            data.fpsY = fpsY;
-            data.cpsX = cpsX;
-            data.cpsY = cpsY;
+            data.isPingEnabled = isPingEnabled;
+            data.isKeystrokesEnabled = isKeystrokesEnabled;
+            data.isToggleSprintEnabled = isToggleSprintEnabled;
+            data.isToggleSneakEnabled = isToggleSneakEnabled;
 
-            // 詳細設定の保存
+            data.fpsX = fpsX; data.fpsY = fpsY;
+            data.cpsX = cpsX; data.cpsY = cpsY;
+            data.pingX = pingX; data.pingY = pingY;
+            data.keysX = keysX; data.keysY = keysY;
+
             data.fpsScale = fpsScale;
             data.fpsShowBackground = fpsShowBackground;
             data.fpsColor = fpsColor;
@@ -123,17 +130,16 @@ public class ClientConfig {
             data.cpsShowBackground = cpsShowBackground;
             data.cpsColor = cpsColor;
 
+            // ★追加
+            data.pingScale = pingScale;
+            data.keysScale = keysScale;
+
             try (FileWriter writer = new FileWriter(getCurrentProfileFile())) {
                 GSON.toJson(data, writer);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // ==========================================
-    // プロファイル操作メソッド
-    // ==========================================
     public static void createProfile(String name) {
         if (name == null || name.trim().isEmpty() || profiles.contains(name)) return;
         profiles.add(name);
@@ -143,8 +149,7 @@ public class ClientConfig {
 
     public static void deleteProfile(String name) {
         if (name.equals("Default") || !profiles.contains(name)) return;
-        File file = new File(CONFIG_DIR, name + ".json");
-        if (file.exists()) file.delete();
+        new File(CONFIG_DIR, name + ".json").delete();
         profiles.remove(name);
         if (currentProfile.equals(name)) {
             currentProfile = profiles.get(0);
@@ -158,21 +163,11 @@ public class ClientConfig {
         load();
     }
 
-    // JSONの形を定義する内部クラス（ここにも追加した変数を忘れずに書く）
     private static class ProfileData {
-        boolean isFpsEnabled;
-        boolean isCpsEnabled;
-        int fpsX;
-        int fpsY;
-        int cpsX;
-        int cpsY;
-
-        float fpsScale;
-        boolean fpsShowBackground;
-        int fpsColor;
-
-        float cpsScale;
-        boolean cpsShowBackground;
-        int cpsColor;
+        boolean isFpsEnabled, isCpsEnabled, isPingEnabled, isKeystrokesEnabled, isToggleSprintEnabled, isToggleSneakEnabled;
+        int fpsX, fpsY, cpsX, cpsY, pingX, pingY, keysX, keysY;
+        float fpsScale, cpsScale, pingScale, keysScale; // ★追加
+        boolean fpsShowBackground, cpsShowBackground;
+        int fpsColor, cpsColor;
     }
 }

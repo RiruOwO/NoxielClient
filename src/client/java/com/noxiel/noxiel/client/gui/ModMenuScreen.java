@@ -40,7 +40,7 @@ public class ModMenuScreen extends Screen {
         drawTab(context, "MODS", panelX + 10, panelY - 25, 80, 25, 0, mouseX, mouseY);
         drawTab(context, "SETTINGS", panelX + 95, panelY - 25, 100, 25, 1, mouseX, mouseY);
 
-        // カードの描画（3列2行）
+        // MODSタブの中身
         if (currentTab == 0) {
             String searchText = this.searchField != null ? this.searchField.getText().toLowerCase().trim() : "";
 
@@ -50,23 +50,11 @@ public class ModMenuScreen extends Screen {
             int row1 = panelY + 50;
             int row2 = panelY + 160;
 
-            // --- 1行目 ---
-            if (searchText.isEmpty() || "fps".contains(searchText)) {
-                drawCard(context, "FPS", col1, row1, 120, 90, ClientConfig.isFpsEnabled);
-            }
-            if (searchText.isEmpty() || "cps".contains(searchText)) {
-                drawCard(context, "CPS", col2, row1, 120, 90, ClientConfig.isCpsEnabled);
-            }
-            if (searchText.isEmpty() || "ping".contains(searchText)) {
-                drawCard(context, "PING", col3, row1, 120, 90, ClientConfig.isPingEnabled);
-            }
+            if (searchText.isEmpty() || "fps".contains(searchText)) drawCard(context, "FPS", col1, row1, 120, 90, ClientConfig.isFpsEnabled);
+            if (searchText.isEmpty() || "cps".contains(searchText)) drawCard(context, "CPS", col2, row1, 120, 90, ClientConfig.isCpsEnabled);
+            if (searchText.isEmpty() || "ping".contains(searchText)) drawCard(context, "PING", col3, row1, 120, 90, ClientConfig.isPingEnabled);
+            if (searchText.isEmpty() || "keys".contains(searchText) || "keystrokes".contains(searchText)) drawCard(context, "KEYS", col1, row2, 120, 90, ClientConfig.isKeystrokesEnabled);
 
-            // --- 2行目 ---
-            if (searchText.isEmpty() || "keys".contains(searchText) || "keystrokes".contains(searchText)) {
-                drawCard(context, "KEYS", col1, row2, 120, 90, ClientConfig.isKeystrokesEnabled);
-            }
-
-            // Sprint/Sneak カード（どちらかがオンならENABLED）
             if (searchText.isEmpty() || "sprint".contains(searchText) || "sneak".contains(searchText)) {
                 boolean anyEnabled = ClientConfig.isToggleSprintEnabled || ClientConfig.isToggleSneakEnabled;
                 drawCard(context, "Sprint/Sneak", col2, row2, 120, 90, anyEnabled);
@@ -78,7 +66,6 @@ public class ModMenuScreen extends Screen {
         drawTab(context, "HUD", panelX + panelWidth - 100, panelY + 5, 40, 20, -1, mouseX, mouseY);
         drawTab(context, "CONFIG", panelX + panelWidth - 55, panelY + 5, 45, 20, -1, mouseX, mouseY);
 
-        // 検索バー
         if (this.searchField != null) {
             this.searchField.render(context, mouseX, mouseY, delta);
         }
@@ -121,6 +108,8 @@ public class ModMenuScreen extends Screen {
 
         if (isMouseOverTab(mouseX, mouseY, panelX + 10, panelY - 25, 80, 25)) { currentTab = 0; return true; }
         if (isMouseOverTab(mouseX, mouseY, panelX + 95, panelY - 25, 100, 25)) { currentTab = 1; return true; }
+        if (isMouseOverTab(mouseX, mouseY, panelX + 200, panelY - 25, 80, 25)) { currentTab = 2; return true; } // ★追加
+
         if (isMouseOverTab(mouseX, mouseY, panelX + panelWidth - 100, panelY + 5, 40, 20)) { if (this.client != null) this.client.setScreen(new HudEditorScreen()); return true; }
         if (isMouseOverTab(mouseX, mouseY, panelX + panelWidth - 55, panelY + 5, 45, 20)) { if (this.client != null) this.client.setScreen(new ConfigScreen()); return true; }
 
@@ -132,7 +121,6 @@ public class ModMenuScreen extends Screen {
             int row1 = panelY + 50;
             int row2 = panelY + 160;
 
-            // --- FPS ---
             if (searchText.isEmpty() || "fps".contains(searchText)) {
                 if (isMouseOverTab(mouseX, mouseY, col1, row1, 120, 90)) {
                     if (mouseY >= row1 + 70) { ClientConfig.isFpsEnabled = !ClientConfig.isFpsEnabled; ClientConfig.save(); }
@@ -140,7 +128,6 @@ public class ModMenuScreen extends Screen {
                     return true;
                 }
             }
-            // --- CPS ---
             if (searchText.isEmpty() || "cps".contains(searchText)) {
                 if (isMouseOverTab(mouseX, mouseY, col2, row1, 120, 90)) {
                     if (mouseY >= row1 + 70) { ClientConfig.isCpsEnabled = !ClientConfig.isCpsEnabled; ClientConfig.save(); }
@@ -148,7 +135,6 @@ public class ModMenuScreen extends Screen {
                     return true;
                 }
             }
-            // --- PING ---
             if (searchText.isEmpty() || "ping".contains(searchText)) {
                 if (isMouseOverTab(mouseX, mouseY, col3, row1, 120, 90)) {
                     if (mouseY >= row1 + 70) { ClientConfig.isPingEnabled = !ClientConfig.isPingEnabled; ClientConfig.save(); }
@@ -156,7 +142,6 @@ public class ModMenuScreen extends Screen {
                     return true;
                 }
             }
-            // --- KEYS ---
             if (searchText.isEmpty() || "keys".contains(searchText) || "keystrokes".contains(searchText)) {
                 if (isMouseOverTab(mouseX, mouseY, col1, row2, 120, 90)) {
                     if (mouseY >= row2 + 70) { ClientConfig.isKeystrokesEnabled = !ClientConfig.isKeystrokesEnabled; ClientConfig.save(); }
@@ -164,23 +149,21 @@ public class ModMenuScreen extends Screen {
                     return true;
                 }
             }
-            // --- Sprint/Sneak ---
             if (searchText.isEmpty() || "sprint".contains(searchText) || "sneak".contains(searchText)) {
                 if (isMouseOverTab(mouseX, mouseY, col2, row2, 120, 90)) {
                     if (mouseY >= row2 + 70) {
-                        // 下半分なら一括トグル
                         boolean anyEnabled = ClientConfig.isToggleSprintEnabled || ClientConfig.isToggleSneakEnabled;
                         ClientConfig.isToggleSprintEnabled = !anyEnabled;
                         ClientConfig.isToggleSneakEnabled = false;
                         ClientConfig.save();
                     } else {
-                        // 上半分なら設定画面を開く
                         if (this.client != null) this.client.setScreen(new HudSettingsScreen("MOVE"));
                     }
                     return true;
                 }
             }
         }
+
         return super.mouseClicked(mouseX, mouseY, button);
     }
 

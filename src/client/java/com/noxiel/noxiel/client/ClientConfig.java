@@ -36,7 +36,6 @@ public class ClientConfig {
     public static boolean cpsShowBackground = false;
     public static int cpsColor = 0xFFF5C2E7;
 
-    // ★追加：PingとKeystrokesのスケール
     public static float pingScale = 1.0f;
     public static float keysScale = 1.0f;
 
@@ -50,8 +49,6 @@ public class ClientConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File CONFIG_DIR = new File(FabricLoader.getInstance().getConfigDir().toFile(), "Noxiel");
-
-    public static boolean isCustomModelEnabled = false;
 
     private static File getCurrentProfileFile() {
         return new File(CONFIG_DIR, currentProfile + ".json");
@@ -99,9 +96,9 @@ public class ClientConfig {
                     cpsShowBackground = data.cpsShowBackground;
                     cpsColor = data.cpsColor;
 
-                    // ★追加
                     pingScale = data.pingScale;
                     keysScale = data.keysScale;
+
                 }
             } catch (Exception e) { e.printStackTrace(); }
         }
@@ -130,7 +127,6 @@ public class ClientConfig {
             data.cpsShowBackground = cpsShowBackground;
             data.cpsColor = cpsColor;
 
-            // ★追加
             data.pingScale = pingScale;
             data.keysScale = keysScale;
 
@@ -166,8 +162,10 @@ public class ClientConfig {
     private static class ProfileData {
         boolean isFpsEnabled, isCpsEnabled, isPingEnabled, isKeystrokesEnabled, isToggleSprintEnabled, isToggleSneakEnabled;
         int fpsX, fpsY, cpsX, cpsY, pingX, pingY, keysX, keysY;
-        float fpsScale, cpsScale, pingScale, keysScale; // ★追加
+        float fpsScale, cpsScale, pingScale, keysScale;
         boolean fpsShowBackground, cpsShowBackground;
         int fpsColor, cpsColor;
+        // ★追加
+        String currentSkinModel;
     }
 }
